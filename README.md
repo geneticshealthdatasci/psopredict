@@ -2,8 +2,6 @@
 
 Machine learning framework for psoriasis outcome prediction using genomic datasets
 
-___
-
 ### Setup
 
 This project was developed in Python using Anaconda.
