@@ -1,0 +1,10 @@
+name: psoML
+dependencies:
+  - matplotlib=2.2.2
+  - numpy=1.14.5
+  - numpy-base=1.14.5
+  - pandas=0.23.1
+  - python=2.7.15
+  - scikit-learn=0.19.1
+  - scipy=1.1.0
+
