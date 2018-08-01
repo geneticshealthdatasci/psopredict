@@ -7,4 +7,4 @@ dependencies:
   - python=2.7.15
   - scikit-learn=0.19.1
   - scipy=1.1.0
-
+  - pytables

@@ -65,17 +65,35 @@ class ParamReader:
         
         """Convert numeric parameters; populate defaults where needed"""
         
+        defaulted = False
+        
         if 'random_seed' in self.params:
             self.params['random_seed'] = int(self.params['random_seed'])
         else:
             self.params['random_seed'] = 0
             self.write_to_log('Random seed defaults to 0')
+            defaulted = True
         
         if 'test_pc' in self.params:
             self.params['test_pc'] = float(self.params['test_pc'])
         else:
             self.params['test_pc'] = 0.3
             self.write_to_log('Test set percentage defaults to 0.3')
+            defaulted = True
+        
+        if 'cv_folds' in self.params:
+            tokens = self.params['cv_folds'].split(' ')
+            if len(tokens) == 2:
+                self.params['cv_folds'] = (int(tokens[0]), int(tokens[1]))
+            else:
+                self.params['cv_folds'] = (int(tokens[0]), 1)
+        else:
+            self.params['cv_folds'] = (5, 3)
+            self.write_to_log('CV defaults to 5-fold repeated 3 times')
+            defaulted = True
+        
+        if defaulted:
+            self.write_to_log('')
 
 
     def get_params(self):
@@ -95,12 +113,15 @@ class ParamReader:
         self.write_to_log('')
         
 
-    def write_to_log(self, content, pandas=False):
+    def write_to_log(self, content, pandas=False, gap=False):
         
         """Writes to log file in a "safe" manner"""
         
         with open(self.log, 'a') as f:
-            if(pandas):
+            if pandas:
                 f.writelines(content.to_string() + '\n')
             else:
                 f.writelines(str(content) + '\n')
+            
+            if gap:
+                f.writelines('\n')
