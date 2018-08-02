@@ -1,2 +1,6 @@
+# Directories
 test
 .spyproject
+
+# Compiled files
+*.py[cod]
