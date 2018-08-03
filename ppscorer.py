@@ -50,7 +50,9 @@ class PPScorer:
         """Collect the predicted values before calculating score"""
         
         self.ys.append(y_pred)
-        return self.real_scorer(y_true=y_true, y_pred=y_pred)
+        print('!!!\n!!!\nIs it OK to just pass predicted values into any ' +
+              'scorer?!\n!!!\n!!!')
+        return self.real_scorer(y_true, y_pred)
     
     
     def custom_scorer(self):

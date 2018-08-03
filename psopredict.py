@@ -24,8 +24,11 @@ import sys
 import paramreader, ppscorer
 import pandas as pd
 import numpy as np
-from sklearn.model_selection import train_test_split, RepeatedStratifiedKFold
+from sklearn.model_selection import (train_test_split, RepeatedStratifiedKFold,
+                                     GridSearchCV, PredefinedSplit,
+                                     StratifiedKFold)
 from sklearn.metrics import roc_auc_score
+from sklearn.linear_model import LogisticRegression
 
 
 PARAMS_REQD = ['out', 'data', 'target', 'mode', 'model']
@@ -76,19 +79,28 @@ else:
     sys.exit('Exiting. "mode" parameter must be one of [binary/continuous]')
 
 ## Generate CV indices
-if params['mode'] == 'binary':
-    cv = RepeatedStratifiedKFold(*params['cv_folds'], random_state=random_state)
-    cv_indices = cv.split(X_train, y_train)
-    for fold in cv_indices:
-        print(fold[0][:8])
-        print(fold[1][:8])
-        print('Need some code here to check for stratification')
-else:
-    sys.exit('Exiting. Stratified CV not done for cts outcomes')
-print('Also add code to check the number of times each index is appearing??')
+#if params['mode'] == 'binary':
+#    cv = RepeatedStratifiedKFold(*params['cv_folds'], random_state=random_state)
+#    cv_indices = cv.split(X_train, y_train)
+#    for fold in cv_indices:
+#        print(fold[0][:8])
+#        print(fold[1][:8])
+#        print('Need some code here to check for stratification')
+#else:
+#    sys.exit('Exiting. Stratified CV not done for cts outcomes')
+#print('Also add code to check the number of times each index is appearing??')
 
-print(X_train.shape)
-print(X_test.shape)
+print(X_train.shape, y_train.shape)
+print(X_test.shape, y_test.shape)
 
 pps = ppscorer.PPScorer(roc_auc_score)
-pps.temp_print_scorer_name()
+
+tmp_cv = StratifiedKFold(params['cv_folds'][0], random_state=random_state)
+tmp_clf = GridSearchCV(LogisticRegression(), {'C': [0.1, 1]},
+                       cv = tmp_cv, scoring = pps.custom_scorer())
+#tmp_clf = GridSearchCV(LogisticRegression(), {'C': [0.1, 1]},
+#                       cv = cv, scoring='roc_auc')
+print('OK so far')
+tmp_clf.fit(X_train, y_train)
+print(pps.get_ys()[0])
+print('Only showing first element of pps.ys')
