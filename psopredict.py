@@ -21,10 +21,11 @@
 
 from __future__ import division
 import sys
-import paramreader
+import paramreader, ppscorer
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split, RepeatedStratifiedKFold
+from sklearn.metrics import roc_auc_score
 
 
 PARAMS_REQD = ['out', 'data', 'target', 'mode', 'model']
@@ -86,6 +87,8 @@ else:
     sys.exit('Exiting. Stratified CV not done for cts outcomes')
 print('Also add code to check the number of times each index is appearing??')
 
-
 print(X_train.shape)
 print(X_test.shape)
+
+pps = ppscorer.PPScorer(roc_auc_score)
+pps.temp_print_scorer_name()
