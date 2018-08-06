@@ -26,15 +26,27 @@ class PPScorer:
     
     """Class for custom scorer"""
     
+    SUPPORTED_SCORES = ['roc_auc_score']
+    
     def __init__(self, real_scorer):
         
         """
         The argument real_scorer should be the scorer on which hyperparameter
         optimisation is based, e.g. roc_auc object from sklearn
+        
+        real_scorer type is inferred from its name (score vs loss/error)
+        based on: https://bit.ly/2OIHMSa
         """
         
         self.ys = []
         self.real_scorer = real_scorer
+        
+        if self.real_scorer.__name__ not in PPScorer.SUPPORTED_SCORES:
+            sys.exit('Exiting. Provided score type (objective function) need' +
+                     's adding to SUPPORTED_SCORES. Also check the collect_a' +
+                     'nd_score() method works directly with y_true/y_pred...' +
+                     ' is this true for arbitraty sklearn scores?')
+        
         suffix = self.real_scorer.__name__.split('_')[-1]
         if suffix == 'score':
             self.greater_is_better = True
@@ -49,9 +61,7 @@ class PPScorer:
    
         """Collect the predicted values before calculating score"""
         
-        self.ys.append(y_pred)
-        print('!!!\n!!!\nIs it OK to just pass predicted values into any ' +
-              'scorer?!\n!!!\n!!!')
+        self.ys.append((y_true, y_pred))
         return self.real_scorer(y_true, y_pred)
     
     

@@ -25,8 +25,7 @@ import paramreader, ppscorer
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import (train_test_split, RepeatedStratifiedKFold,
-                                     GridSearchCV, PredefinedSplit,
-                                     StratifiedKFold)
+                                     GridSearchCV, StratifiedKFold)
 from sklearn.metrics import roc_auc_score
 from sklearn.linear_model import LogisticRegression
 
@@ -104,3 +103,24 @@ print('OK so far')
 tmp_clf.fit(X_train, y_train)
 print(pps.get_ys()[0])
 print('Only showing first element of pps.ys')
+print(len(pps.get_ys()))
+print(map(lambda x: (len(x[0]), len(x[1])), pps.get_ys()))
+print('')
+print(tmp_clf.best_params_)
+print('')
+print('')
+
+
+
+## Do some testing - investigate the collecting together code here:
+## https://stackoverflow.com/a/49646065
+
+pps2 = ppscorer.PPScorer(roc_auc_score)
+tmp_cv2 = StratifiedKFold(3, random_state=random_state)
+tmp_clf2 = GridSearchCV(LogisticRegression(), {'C': [0.1]},
+                        cv = tmp_cv2, scoring=pps2.custom_scorer())
+tmp_clf2.fit(X_train, y_train)
+print(map(lambda x: (len(x[0]), len(x[1])), pps2.get_ys()))
+print(pps2.get_ys()[0])
+
+
