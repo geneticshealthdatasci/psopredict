@@ -36,6 +36,7 @@ if not len(sys.argv) == 2:
     sys.exit('Exiting. Please include parameter file as argument')
 
 ## Handle parameters
+print('Reading parameters')
 pr = paramreader.ParamReader(sys.argv[1])
 pr.check_params(PARAMS_REQD)
 pr.log_params()
@@ -46,6 +47,7 @@ params = pr.get_params()
 random_state = np.random.RandomState(params['random_seed'])
 
 ## Load data
+print('Loading data')
 df = pd.read_hdf(params['data'])
 print(df.shape)
 
