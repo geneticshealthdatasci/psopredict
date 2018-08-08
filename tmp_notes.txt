@@ -1,0 +1,14 @@
+# Some temp code for testing
+
+params = {'out': 'test/psopredict_test',
+'data': '/Users/njd/Dropbox/Psoriasis/PSORT/python_predict/processed_data/ada_mini_tmp.h5',
+'target': 'PASI90_t6m_w60d',
+'mode': 'binary',
+'model': 'logistic',
+'random_seed': 1000000,
+'test_pc': 0.25,
+'cv_folds': 4}
+
+
+def classof(x):
+    return x.__class__
