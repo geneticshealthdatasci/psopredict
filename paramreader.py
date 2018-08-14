@@ -91,7 +91,30 @@ class ParamReader:
             self.params['cv_folds'] = (5, 3)
             self.write_to_log('CV defaults to 5-fold repeated 3 times')
             defaulted = True
-        
+
+        if 'param_grid' in self.params:
+            param_grid = {}
+            tokens = self.params['param_grid'].split(' ')
+            for token in tokens:
+                param = token.split(':')
+                if len(param) == 2:
+                    param_vals = param[1].split(',')
+                    param_vals = map(float, param_vals)
+                    param_grid[param[0]] = param_vals
+                else:
+                    sys.exit('Exiting. param_grid is not correctly specified')
+            self.params['param_grid'] = param_grid
+        else:
+            if self.params['model'] == 'logistic':
+                grid = {'C': map(lambda x: 10 ** x, range(-5, 6))}
+                self.params['param_grid'] = grid
+            else:
+                sys.exit('Exiting. No default parameter grid set for model')
+            self.write_to_log('For ' + self.params['model'] + ' model type, ' +
+                              'param_grid defaults to ' +
+                              str(self.params['param_grid']))
+            defaulted = True
+
         if defaulted:
             self.write_to_log('')
 
