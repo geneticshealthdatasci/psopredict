@@ -67,6 +67,18 @@ class ParamReader:
         
         defaulted = False
         
+        if 'simple_mode' in self.params:
+            if self.params['simple_mode'] in ['True', 'T', 'TRUE']:
+                self.params['simple_mode'] = True
+            elif self.params['simple_mode'] in ['False', 'F', 'FALSE']:
+                self.params['simple_mode'] = False
+            else:
+                sys.exit('Exiting. Cannot interpret simple_mode parameter')
+        else:
+            self.params['simple_mode'] = True
+            self.write_to_log('Simple mode defaults to True')
+            defaulted = True
+
         if 'random_seed' in self.params:
             self.params['random_seed'] = int(self.params['random_seed'])
         else:
@@ -107,9 +119,12 @@ class ParamReader:
         else:
             if self.params['model'] == 'logistic':
                 grid = {'C': map(lambda x: 10 ** x, range(-5, 6))}
-                self.params['param_grid'] = grid
+            elif self.params['model'] == 'SVC':
+                grid = {'kernel': ['rbf'], 'C': [1, 10, 100, 1000],
+                        'gamma': [0.001, 0.0001]}
             else:
                 sys.exit('Exiting. No default parameter grid set for model')
+            self.params['param_grid'] = grid
             self.write_to_log('For ' + self.params['model'] + ' model type, ' +
                               'param_grid defaults to ' +
                               str(self.params['param_grid']))
@@ -136,7 +151,7 @@ class ParamReader:
         self.write_to_log('')
         
 
-    def write_to_log(self, content, pandas=False, gap=False):
+    def write_to_log(self, content='', pandas=False, gap=False):
         
         """Writes to log file in a "safe" manner"""
         

@@ -21,6 +21,7 @@
 import sys
 from sklearn.metrics import roc_auc_score, make_scorer
 from sklearn.linear_model import LogisticRegression
+from sklearn.svm import SVC
 from sklearn.model_selection import StratifiedKFold, GridSearchCV
 
 
@@ -35,18 +36,31 @@ class PPModeller:
         self._set_scorer(score_string)
         self._set_CVs(n_folds, mode)
         self.gridsearch = GridSearchCV(self.model, param_grid,
-                                       scoring=self.scorer, cv=self.cvs)
+                                       scoring=self.scorer, cv=self.cvs,
+                                       refit=False, return_train_score=False)
         self.fitted = False
 
     def _set_scorer(self, score_string):
         if score_string == 'roc_auc':
             self.scorer = make_scorer(roc_auc_score, needs_threshold=True)
+            self.needs_threshold = True
         else:
             sys.exit('Exiting. Unsupported scoring type')
+    
+    def get_scorer(self):
+        return self.scorer
 
     def _set_model(self, model_string):
+        self.pred_class = None
+        self.pred_numer = None
         if model_string == 'logistic':
             self.model = LogisticRegression(random_state=self.random_state)
+            self.pred_class = self.model.predict
+            self.pred_numer = self.model.predict_proba
+        elif model_string == 'SVC':
+            self.model = SVC(random_state=self.random_state)
+            self.pred_class = self.model.predict
+            self.pred_numer = self.model.decision_function
         else:
             sys.exit('Exiting: Unsupported model type')
 
@@ -59,3 +73,16 @@ class PPModeller:
 
     def fit(self, X, y):
         self.gridsearch.fit(X, y)
+        self.fitted = True
+    
+    def refit(self, X, y):
+        sys.exit('This pred_numer thing isn\'t working for SVC!!')
+        if self.fitted:
+            self.model.set_params(**self.gridsearch.best_params_)
+            self.model.fit(X, y)
+            if self.needs_threshold:
+                return self.pred_numer(X)
+            else:
+                return self.pred_class(X)
+        else:
+            sys.exit('Exiting: Cannot refit model before grid search!')

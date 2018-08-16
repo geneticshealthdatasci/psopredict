@@ -88,15 +88,11 @@ print(X_test.shape, y_test.shape)
 
 
 # Using training set only, want to perform repeated CV
-random_seeds = map(lambda x: random_seed + x + 1, range(params['cv_folds'][1]))
-random_states = map(lambda x: np.random.RandomState(x), random_seeds)
-
-print(random_seeds)
-print(random_states)
-print(params['param_grid'])
-
 
 def run_gridsearch(fm_random_state):
+    """
+    Method to run gridsearch from global parameters using supplied random state
+    """
     gridsearcher = ppmodeller.PPModeller(model_string=params['model'],
                                          score_string=params['scoring'],
                                          n_folds=params['cv_folds'][0],
@@ -106,13 +102,53 @@ def run_gridsearch(fm_random_state):
     gridsearcher.fit(X_train, y_train)
     return gridsearcher
 
-
 print('Fitting models')
-fitted_GSs = map(run_gridsearch, random_states)
 
-print(len(fitted_GSs))
-for fitted_GS in fitted_GSs:
+if params['simple_mode']:
+    
+    pr.write_to_log('WARNING: In simple mode, cross-validation is not ' +
+                    'repeated; parameter for number of repeats is ignored',
+                    gap=True)
+    
+    random_states = [np.random.RandomState(random_seed + 1)]
+    fitted_GS = map(run_gridsearch, random_states)
+    
+    print(len(fitted_GS))
+    fitted_GS = fitted_GS[0]
+    
+    print('')
+    print(fitted_GS.gridsearch.cv_results_)
     print(fitted_GS.gridsearch.best_params_)
+    print('')
+    
+    y_train_pred = fitted_GS.refit(X_train, y_train)
+    print(fitted_GS.model.get_params(deep=False))
+    
+    scorer = fitted_GS.get_scorer()
+    print(scorer(y_train, y_train_pred))
+
+else:
+    sys.exit('Exiting: non- simple mode not fully implemented')
+    
+    random_seeds = map(lambda x: random_seed + x + 1,
+                       range(params['cv_folds'][1]))
+    random_states = map(lambda x: np.random.RandomState(x), random_seeds)
+    
+    print(random_seeds)
+    print(random_states)
+    print(params['param_grid'])
+
+    fitted_GSs = map(run_gridsearch, random_states)
+    
+    print(len(fitted_GSs))
+    for fitted_GS in fitted_GSs:
+        print('')
+        print('')
+        #print(fitted_GS.gridsearch.best_params_)
+        print(fitted_GS.gridsearch.cv_results_)
+    
+    for fitted_GS in fitted_GSs:
+        print(fitted_GS.gridsearch.best_params_)
 
 
 
