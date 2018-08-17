@@ -31,6 +31,7 @@ class PPModeller:
 
     def __init__(self, model_string, score_string, n_folds, mode,
                  param_grid, random_state):
+        sys.exit('IMPLEMENT SEPARATE MODELLERS BY MODEL TYPE')
         self.random_state = random_state
         self._set_model(model_string)
         self._set_scorer(score_string)
@@ -46,7 +47,7 @@ class PPModeller:
             self.needs_threshold = True
         else:
             sys.exit('Exiting. Unsupported scoring type')
-    
+
     def get_scorer(self):
         return self.scorer
 
@@ -74,7 +75,7 @@ class PPModeller:
     def fit(self, X, y):
         self.gridsearch.fit(X, y)
         self.fitted = True
-    
+
     def refit(self, X, y):
         sys.exit('This pred_numer thing isn\'t working for SVC!!')
         if self.fitted:
