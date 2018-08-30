@@ -22,14 +22,10 @@
 from __future__ import division
 import sys
 import paramreader
-import ppscorer
 import ppmodeller
 import pandas as pd
 import numpy as np
-from sklearn.model_selection import (train_test_split, GridSearchCV,
-                                     StratifiedKFold)
-from sklearn.metrics import roc_auc_score
-from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import train_test_split
 
 
 PARAMS_REQD = ['out', 'data', 'target', 'mode', 'model', 'scoring']
@@ -93,14 +89,14 @@ def run_gridsearch(fm_random_state):
     """
     Method to run gridsearch from global parameters using supplied random state
     """
-    gridsearcher = ppmodeller.PPModeller(model_string=params['model'],
-                                         score_string=params['scoring'],
-                                         n_folds=params['cv_folds'][0],
-                                         mode=params['mode'],
-                                         param_grid=params['param_grid'],
-                                         random_state=fm_random_state)
-    gridsearcher.fit(X_train, y_train)
-    return gridsearcher
+    modeller = ppmodeller.PPModeller(model_string=params['model'],
+                                     score_string=params['scoring'],
+                                     n_folds=params['cv_folds'][0],
+                                     mode=params['mode'],
+                                     param_grid=params['param_grid'],
+                                     random_state=fm_random_state)
+    modeller.fit_gridsearch(X_train, y_train)
+    return modeller
 
 print('Fitting models')
 
@@ -111,21 +107,35 @@ if params['simple_mode']:
                     gap=True)
     
     random_states = [np.random.RandomState(random_seed + 1)]
-    fitted_GS = map(run_gridsearch, random_states)
+    post_GS_modeller = map(run_gridsearch, random_states)[0]
     
-    print(len(fitted_GS))
-    fitted_GS = fitted_GS[0]
+    fitted_params = post_GS_modeller.gridsearch.best_params_
+    post_GS_modeller.fix_params(fitted_params)
     
-    print('')
-    print(fitted_GS.gridsearch.cv_results_)
-    print(fitted_GS.gridsearch.best_params_)
-    print('')
+    train_results = post_GS_modeller.new_fit(X_train, y_train)
     
-    y_train_pred = fitted_GS.refit(X_train, y_train)
-    print(fitted_GS.model.get_params(deep=False))
+    print(train_results)
     
-    scorer = fitted_GS.get_scorer()
-    print(scorer(y_train, y_train_pred))
+    print('HOW DO WE KNOW THAT MODEL IS FITTED CORRECTLY AFTER GRIDSEARCH?')
+    print('WANT TO CHECK BY OUTPUTTING CV RESULTS AND CHECKING AUROC')
+    print('ALSO WANT TO CHANGE OUTPUT SO NO LONGER GET Y_PRED BUT SUMMARY' +
+          'RESULTS AND ROC VALUES')
+    
+#    print('')
+#    print(fitted_GS.gridsearch.cv_results_)
+#    print(fitted_GS.gridsearch.best_params_)
+#    print('')
+    
+    
+    
+#    y_train_pred = fitted_GS.refit(X_train, y_train)
+#    print(y_train_pred)
+#    print(y_train_pred['y_prob'].__class__)
+#    print(y_train.__class__)
+#    print(fitted_GS.get_model().get_params(deep=False))
+    
+#    scorer = fitted_GS.get_scorer()
+#    print(scorer(y_train, y_train_pred))
 
 else:
     sys.exit('Exiting: non- simple mode not fully implemented')
@@ -149,67 +159,3 @@ else:
     
     for fitted_GS in fitted_GSs:
         print(fitted_GS.gridsearch.best_params_)
-
-
-
-
-## Generate CV indices
-#if params['mode'] == 'binary':
-#    cv = RepeatedStratifiedKFold(*params['cv_folds'], random_state=random_state)
-#    cv_indices = cv.split(X_train, y_train)
-#    for fold in cv_indices:
-#        print(fold[0][:8])
-#        print(fold[1][:8])
-#        print('Need some code here to check for stratification')
-#else:
-#    sys.exit('Exiting. Stratified CV not done for cts outcomes')
-#print('Also add code to check the number of times each index is appearing??')
-
-
-
-## 
-
-
-
-
-
-
-
-
-
-
-
-
-
-#pps = ppscorer.PPScorer(roc_auc_score)
-#
-#tmp_cv = StratifiedKFold(params['cv_folds'][0], random_state=random_state)
-#tmp_clf = GridSearchCV(LogisticRegression(), {'C': [0.1, 1]},
-#                       cv = tmp_cv, scoring = pps.custom_scorer())
-##tmp_clf = GridSearchCV(LogisticRegression(), {'C': [0.1, 1]},
-##                       cv = cv, scoring='roc_auc')
-#print('OK so far')
-#tmp_clf.fit(X_train, y_train)
-#print(pps.get_ys()[0])
-#print('Only showing first element of pps.ys')
-#print(len(pps.get_ys()))
-#print(map(lambda x: (len(x[0]), len(x[1])), pps.get_ys()))
-#print('')
-#print(tmp_clf.best_params_)
-#print('')
-#print('')
-#
-#
-#
-### Do some testing - investigate the collecting together code here:
-### https://stackoverflow.com/a/49646065
-#
-#pps2 = ppscorer.PPScorer(roc_auc_score)
-#tmp_cv2 = StratifiedKFold(3, random_state=random_state)
-#tmp_clf2 = GridSearchCV(LogisticRegression(), {'C': [0.1]},
-#                        cv = tmp_cv2, scoring=pps2.custom_scorer())
-#tmp_clf2.fit(X_train, y_train)
-#print(map(lambda x: (len(x[0]), len(x[1])), pps2.get_ys()))
-#print(pps2.get_ys()[0])
-
-

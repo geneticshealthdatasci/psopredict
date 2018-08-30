@@ -19,10 +19,10 @@
 """Module in which appropriate model and scoring scheme are selected"""
 
 import sys
-from sklearn.metrics import roc_auc_score, make_scorer
-from sklearn.linear_model import LogisticRegression
-from sklearn.svm import SVC
+#from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import StratifiedKFold, GridSearchCV
+import logregmodeller
+import svcmodeller
 
 
 class PPModeller:
@@ -31,59 +31,41 @@ class PPModeller:
 
     def __init__(self, model_string, score_string, n_folds, mode,
                  param_grid, random_state):
-        sys.exit('IMPLEMENT SEPARATE MODELLERS BY MODEL TYPE')
-        self.random_state = random_state
-        self._set_model(model_string)
-        self._set_scorer(score_string)
-        self._set_CVs(n_folds, mode)
-        self.gridsearch = GridSearchCV(self.model, param_grid,
-                                       scoring=self.scorer, cv=self.cvs,
-                                       refit=False, return_train_score=False)
-        self.fitted = False
 
-    def _set_scorer(self, score_string):
-        if score_string == 'roc_auc':
-            self.scorer = make_scorer(roc_auc_score, needs_threshold=True)
-            self.needs_threshold = True
-        else:
+        if score_string not in ['roc_auc']:
             sys.exit('Exiting. Unsupported scoring type')
 
-    def get_scorer(self):
-        return self.scorer
-
-    def _set_model(self, model_string):
-        self.pred_class = None
-        self.pred_numer = None
         if model_string == 'logistic':
-            self.model = LogisticRegression(random_state=self.random_state)
-            self.pred_class = self.model.predict
-            self.pred_numer = self.model.predict_proba
+            self.x = logregmodeller.LogRegModeller(mode, random_state)
         elif model_string == 'SVC':
-            self.model = SVC(random_state=self.random_state)
-            self.pred_class = self.model.predict
-            self.pred_numer = self.model.decision_function
+            self.x = svcmodeller.SVCModeller(mode, random_state)
         else:
-            sys.exit('Exiting: Unsupported model type')
+            sys.exit('Exiting. Unsupported model type')
 
-    def _set_CVs(self, n_folds, mode):
+        self._set_CVs(n_folds, mode, random_state)
+        self.gridsearch = GridSearchCV(self.x.model, param_grid,
+                                       scoring=score_string, cv=self.cvs,
+                                       refit=False, return_train_score=False)
+        self.params_fixed = False
+
+    def _set_CVs(self, n_folds, mode, random_state):
         if mode == 'binary':
             self.cvs = StratifiedKFold(n_folds, shuffle=True,
-                                       random_state=self.random_state)
+                                       random_state=random_state)
         else:
-            sys.exit('Exiting. Stratified CV not implemented for cts outcome')
+            sys.exit('Exiting. Stratified CV not implemented for mode ' + mode)
 
-    def fit(self, X, y):
+    def fit_gridsearch(self, X, y):
         self.gridsearch.fit(X, y)
-        self.fitted = True
+    
+    def fix_params(self, params):
+        self.x.fix_params(params)
+        self.params_fixed = True
 
-    def refit(self, X, y):
-        sys.exit('This pred_numer thing isn\'t working for SVC!!')
-        if self.fitted:
-            self.model.set_params(**self.gridsearch.best_params_)
-            self.model.fit(X, y)
-            if self.needs_threshold:
-                return self.pred_numer(X)
-            else:
-                return self.pred_class(X)
-        else:
-            sys.exit('Exiting: Cannot refit model before grid search!')
+    def new_fit(self, X, y):
+        if not self.params_fixed:
+            sys.exit('Cannot perform new fit until parameters fixed.')
+        return self.x.new_fit(X, y)
+
+    def get_model(self):
+        return self.x.model
