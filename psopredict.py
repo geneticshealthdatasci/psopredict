@@ -1,19 +1,19 @@
-## Copyright 2018 Nick Dand
-##
-## This file is part of psopredict
-##
-## psopredict is free software: you can redistribute it and/or modify
-## it under the terms of the GNU General Public License as published by
-## the Free Software Foundation, either version 3 of the License, or
-## (at your option) any later version.
-##
-## psopredict is distributed in the hope that it will be useful,
-## but WITHOUT ANY WARRANTY; without even the implied warranty of
-## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-## GNU General Public License for more details.
-##
-## You should have received a copy of the GNU General Public License
-## along with psopredict.  If not, see <https://www.gnu.org/licenses/>.
+# Copyright 2018 Nick Dand
+#
+# This file is part of psopredict
+#
+# psopredict is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# psopredict is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with psopredict.  If not, see <https://www.gnu.org/licenses/>.
 
 
 """ Master script to read parameters file and run machine learning procedure"""
@@ -21,8 +21,8 @@
 
 from __future__ import division
 import sys
-import paramreader
-import ppmodeller
+import paramreader.ParamReader
+import ppmodeller.PPModeller
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
@@ -98,64 +98,76 @@ def run_gridsearch(fm_random_state):
     modeller.fit_gridsearch(X_train, y_train)
     return modeller
 
+
 print('Fitting models')
 
 if params['simple_mode']:
-    
+
     pr.write_to_log('WARNING: In simple mode, cross-validation is not ' +
                     'repeated; parameter for number of repeats is ignored',
                     gap=True)
-    
+
     random_states = [np.random.RandomState(random_seed + 1)]
     post_GS_modeller = map(run_gridsearch, random_states)[0]
-    
+
     fitted_params = post_GS_modeller.gridsearch.best_params_
     post_GS_modeller.fix_params(fitted_params)
-    
+
+    # This section just for testing that refitting works OK
+    cvresults = post_GS_modeller.gridsearch.cv_results_
+    for result_field in cvresults.keys():
+        if 'time' not in result_field:
+            print(result_field + ':' + str(cvresults[result_field]))
+            pr.write_to_log(result_field + ':' + str(cvresults[result_field]))
+    print('')
+
     train_results = post_GS_modeller.new_fit(X_train, y_train)
-    
-    print(train_results)
-    
+
+    print('Results fitted to training data:')
+    print(train_results['y_prob'].shape)
+    print(train_results['y_prob'][0:10, :])
+
     print('HOW DO WE KNOW THAT MODEL IS FITTED CORRECTLY AFTER GRIDSEARCH?')
     print('WANT TO CHECK BY OUTPUTTING CV RESULTS AND CHECKING AUROC')
-    print('ALSO WANT TO CHANGE OUTPUT SO NO LONGER GET Y_PRED BUT SUMMARY' +
+    print('--- first of these now done')
+    print('ALSO WANT TO CHANGE OUTPUT SO NO LONGER GET Y_PROB BUT SUMMARY' +
           'RESULTS AND ROC VALUES')
-    
+
 #    print('')
 #    print(fitted_GS.gridsearch.cv_results_)
 #    print(fitted_GS.gridsearch.best_params_)
 #    print('')
-    
-    
-    
+
+
+
 #    y_train_pred = fitted_GS.refit(X_train, y_train)
 #    print(y_train_pred)
 #    print(y_train_pred['y_prob'].__class__)
 #    print(y_train.__class__)
 #    print(fitted_GS.get_model().get_params(deep=False))
-    
+
 #    scorer = fitted_GS.get_scorer()
 #    print(scorer(y_train, y_train_pred))
 
 else:
     sys.exit('Exiting: non- simple mode not fully implemented')
-    
+
     random_seeds = map(lambda x: random_seed + x + 1,
                        range(params['cv_folds'][1]))
     random_states = map(lambda x: np.random.RandomState(x), random_seeds)
-    
+
     print(random_seeds)
     print(random_states)
     print(params['param_grid'])
 
     fitted_GSs = map(run_gridsearch, random_states)
-    
+
     print(len(fitted_GSs))
     for fitted_GS in fitted_GSs:
         print('')
         print('')
         #print(fitted_GS.gridsearch.best_params_)
         print(fitted_GS.gridsearch.cv_results_)
-    
+
     for fitted_GS in fitted_GSs:
         print(fitted_GS.gridsearch.best_params_)
