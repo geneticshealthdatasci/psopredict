@@ -21,11 +21,12 @@
 
 from __future__ import division
 import sys
-import paramreader.ParamReader
-import ppmodeller.PPModeller
+from paramreader import ParamReader
+from ppmodeller import PPModeller
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression #remove when not needed
 
 
 PARAMS_REQD = ['out', 'data', 'target', 'mode', 'model', 'scoring']
@@ -35,7 +36,7 @@ if not len(sys.argv) == 2:
 
 # Handle parameters
 print('Reading parameters')
-pr = paramreader.ParamReader(sys.argv[1])
+pr = ParamReader(sys.argv[1])
 pr.check_params(PARAMS_REQD)
 pr.log_params()
 pr.interpret_params()
@@ -54,11 +55,13 @@ X = df.drop(params['target'], axis=1)
 pr.write_to_log('Loaded data comprising ' + str(X.shape[0]) +
                 ' records with ' + str(X.shape[1]) + ' features', gap=True)
 pr.write_to_log('Preview of predictor data:')
-pr.write_to_log(X.iloc[0:5, 0:5], pandas=True, gap=True)
+#nov pr.write_to_log(X.iloc[0:5, 0:5], pandas=True, gap=True)
+pr.write_to_log(X.iloc[0:20, 0:20], pandas=True, gap=True)
 
 y = df[params['target']]
 pr.write_to_log('Preview of outcome data:')
-pr.write_to_log(y.iloc[0:5], pandas=True, gap=True)
+#nov pr.write_to_log(y.iloc[0:5], pandas=True, gap=True)
+pr.write_to_log(y.iloc[0:20], pandas=True, gap=True)
 
 pr.write_to_log('Removing ' + str(sum(pd.isnull(y))) +
                 ' records due to null outcome values', gap=True)
@@ -89,12 +92,12 @@ def run_gridsearch(fm_random_state):
     """
     Method to run gridsearch from global parameters using supplied random state
     """
-    modeller = ppmodeller.PPModeller(model_string=params['model'],
-                                     score_string=params['scoring'],
-                                     n_folds=params['cv_folds'][0],
-                                     mode=params['mode'],
-                                     param_grid=params['param_grid'],
-                                     random_state=fm_random_state)
+    modeller = PPModeller(model_string=params['model'],
+                          score_string=params['scoring'],
+                          n_folds=params['cv_folds'][0],
+                          mode=params['mode'],
+                          param_grid=params['param_grid'],
+                          random_state=fm_random_state)
     modeller.fit_gridsearch(X_train, y_train)
     return modeller
 
@@ -111,6 +114,9 @@ if params['simple_mode']:
     post_GS_modeller = map(run_gridsearch, random_states)[0]
 
     fitted_params = post_GS_modeller.gridsearch.best_params_
+    print('Best fitting parameter:') #remove when not needed
+    print(fitted_params)  #remove when not needed
+    print('') #remove when not needed
     post_GS_modeller.fix_params(fitted_params)
 
     # This section just for testing that refitting works OK
@@ -126,12 +132,29 @@ if params['simple_mode']:
     print('Results fitted to training data:')
     print(train_results['y_prob'].shape)
     print(train_results['y_prob'][0:10, :])
+    print('X:')
+    print(train_results['X'].iloc[0:10, :])
+    print('y')
+    print(train_results['y'].iloc[0:10])
 
     print('HOW DO WE KNOW THAT MODEL IS FITTED CORRECTLY AFTER GRIDSEARCH?')
     print('WANT TO CHECK BY OUTPUTTING CV RESULTS AND CHECKING AUROC')
     print('--- first of these now done')
     print('ALSO WANT TO CHANGE OUTPUT SO NO LONGER GET Y_PROB BUT SUMMARY' +
           'RESULTS AND ROC VALUES')
+    
+    #removed when not needed - here just manually fit a LR model
+    tmpFit = LogisticRegression(C = 0.01)
+    tmpFit.fit(X_train, y_train)
+    tmpFit = tmpFit.predict_proba(X_train)
+    print('')
+    print('Manual fit:')
+    print(tmpFit[0:10, :])
+    
+    print('CAN WE NOW BE HAPPY THAT IT GIVES SAME AS HARD-CODING?')
+    print('-- WHY NOT? YES! JUST MOVE ON!')
+    
+    
 
 #    print('')
 #    print(fitted_GS.gridsearch.cv_results_)

@@ -50,4 +50,6 @@ class LogRegModeller:
         self.model.fit(X, y)
         output = {}
         output['y_prob'] = self.model.predict_proba(X)
+        output['X'] = X #remove when not needed
+        output['y'] = y #remove when not needed
         return output
